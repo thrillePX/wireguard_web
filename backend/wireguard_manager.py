@@ -10,6 +10,38 @@ class WireGuardManager:
     def __init__(self, base_path='/etc/wireguard/'):
         self.base_path = base_path
         os.makedirs(self.base_path, exist_ok=True)
+        self.data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+        os.makedirs(self.data_dir, exist_ok=True)
+    
+    def get_uptime_file(self, config_name):
+        """获取连接启动时间记录文件路径"""
+        return os.path.join(self.data_dir, f'{config_name}.uptime')
+    
+    def record_uptime_start(self, config_name):
+        """记录连接开始时间"""
+        uptime_file = self.get_uptime_file(config_name)
+        with open(uptime_file, 'w') as f:
+            f.write(datetime.now().isoformat())
+    
+    def record_uptime_end(self, config_name):
+        """清除连接开始时间记录"""
+        uptime_file = self.get_uptime_file(config_name)
+        if os.path.exists(uptime_file):
+            os.remove(uptime_file)
+    
+    def get_connection_uptime(self, config_name):
+        """获取连接累计运行时长（秒）"""
+        uptime_file = self.get_uptime_file(config_name)
+        if not os.path.exists(uptime_file):
+            return None
+        try:
+            with open(uptime_file, 'r') as f:
+                start_time_str = f.read().strip()
+            start_time = datetime.fromisoformat(start_time_str)
+            elapsed = (datetime.now() - start_time).total_seconds()
+            return max(0, elapsed)
+        except Exception:
+            return None
 
     def generate_keypair(self):
         """生成WireGuard密钥对"""
@@ -163,6 +195,7 @@ class WireGuardManager:
                     text=True
                 )
                 if result.returncode == 0:
+                    self.record_uptime_start(config_name)
                     return True, "连接成功"
                 else:
                     return False, result.stderr or "连接失败"
@@ -173,6 +206,7 @@ class WireGuardManager:
                     text=True
                 )
                 if result.returncode == 0:
+                    self.record_uptime_start(config_name)
                     return True, "连接成功"
                 else:
                     return False, result.stderr or "连接失败"
@@ -193,6 +227,7 @@ class WireGuardManager:
                     text=True
                 )
                 if result.returncode == 0:
+                    self.record_uptime_end(config_name)
                     return True, "已断开连接"
                 else:
                     return False, result.stderr or "断开失败"
@@ -327,56 +362,35 @@ class WireGuardManager:
         else:
             return f"{bytes_num:.0f} B"
 
-    def calculate_uptime(self, latest_handshake):
-        """根据最后握手时间计算运行时间"""
-        if not latest_handshake:
+    def calculate_uptime(self, latest_handshake, config_name=None):
+        """根据连接开始时间计算累计运行时长"""
+        if config_name:
+            seconds = self.get_connection_uptime(config_name)
+            if seconds is not None:
+                return self.format_uptime(seconds)
+        return None
+    
+    def format_uptime(self, seconds):
+        """格式化运行时长"""
+        if seconds is None or seconds <= 0:
             return None
         
-        try:
-            import re
-            from datetime import datetime, timedelta
-            
-            seconds = 0
-            handshake_str = latest_handshake.lower()
-            
-            week_match = re.search(r'(\d+)\s*week', handshake_str)
-            day_match = re.search(r'(\d+)\s*day', handshake_str)
-            hour_match = re.search(r'(\d+)\s*hour', handshake_str)
-            minute_match = re.search(r'(\d+)\s*minute', handshake_str)
-            second_match = re.search(r'(\d+)\s*second', handshake_str)
-            
-            if second_match:
-                seconds += int(second_match.group(1))
-            if minute_match:
-                seconds += int(minute_match.group(1)) * 60
-            if hour_match:
-                seconds += int(hour_match.group(1)) * 3600
-            if day_match:
-                seconds += int(day_match.group(1)) * 86400
-            if week_match:
-                seconds += int(week_match.group(1)) * 604800
-            
-            if seconds > 0:
-                td = timedelta(seconds=seconds)
-                days = td.days
-                hours, remainder = divmod(td.seconds, 3600)
-                minutes, seconds = divmod(remainder, 60)
-                
-                parts = []
-                if days > 0:
-                    parts.append(f"{days}天")
-                if hours > 0:
-                    parts.append(f"{hours}时")
-                if minutes > 0:
-                    parts.append(f"{minutes}分")
-                if seconds > 0 and days == 0:
-                    parts.append(f"{seconds}秒")
-                
-                return ''.join(parts) if parts else '刚刚'
-            
-            return '刚刚'
-        except Exception as e:
-            return None
+        td = timedelta(seconds=int(seconds))
+        days = td.days
+        hours, remainder = divmod(td.seconds, 3600)
+        minutes, secs = divmod(remainder, 60)
+        
+        parts = []
+        if days > 0:
+            parts.append(f"{days}天")
+        if hours > 0:
+            parts.append(f"{hours}时")
+        if minutes > 0:
+            parts.append(f"{minutes}分")
+        if secs > 0 and days == 0:
+            parts.append(f"{secs}秒")
+        
+        return ''.join(parts) if parts else '< 1秒'
 
     def list_connections(self):
         """列出所有WireGuard配置"""
@@ -405,10 +419,7 @@ class WireGuardManager:
                 }
                 
                 if connection['connected']:
-                    status = self.get_connection_status(file.replace('.conf', ''))
-                    if status and status.get('peers'):
-                        peer = status['peers'][0]
-                        connection['uptime'] = self.calculate_uptime(peer.get('latest_handshake'))
+                    connection['uptime'] = self.calculate_uptime(None, file.replace('.conf', ''))
                 
                 connections.append(connection)
         
@@ -554,7 +565,7 @@ class WireGuardManager:
                     conn_status['endpoint'] = peer.get('endpoint')
                     conn_status['transfer'] = peer.get('transfer', {'rx': 0, 'tx': 0})
                     conn_status['latest_handshake'] = peer.get('latest_handshake')
-                    conn_status['uptime'] = self.calculate_uptime(peer.get('latest_handshake'))
+                conn_status['uptime'] = self.calculate_uptime(None, conn['name'])
             
             status['connections'].append(conn_status)
         
