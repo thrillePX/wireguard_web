@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+README_EN.md
+LICENSE
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info
+dist
+build
+
+# Frontend
+node_modules
+npm-debug.log
+.DS_Store
+*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Test
+*.test.js
+*.spec.js
+coverage
+
+# Logs
+*.log
+logs
+
+# Environment
+.env
+.env.local
+.env.*.local

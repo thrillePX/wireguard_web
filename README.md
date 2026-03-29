@@ -123,9 +123,9 @@ wireguardweb/
 
 ### 环境要求
 - macOS / Linux
-- Python 3.8+
-- Node.js 16+
+- Python 3.8+ / Node.js 16+
 - WireGuard 已安装
+- Docker & Docker Compose (可选，用于容器部署)
 
 ### 安装 WireGuard
 
@@ -139,7 +139,33 @@ brew install wireguard-tools
 sudo apt install wireguard
 ```
 
-### 启动应用
+### 🐳 Docker 部署（推荐）
+
+#### 1. 使用一键部署脚本
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+#### 2. 或手动部署
+```bash
+# 构建并启动
+docker-compose up -d --build
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+```
+
+#### 3. 访问地址
+- 前端: http://localhost:3000
+- 后端: http://localhost:5001
+
+> ⚠️ **注意**: Docker 部署需要特权模式来管理网络接口。
+
+### 传统部署
 
 ```bash
 cd wireguardweb
@@ -314,6 +340,7 @@ bytes_to_bits = bytes × 8
 | 2024-03-29 | v1.6 | 从私钥派生公钥功能；首页默认显示已连接 |
 | 2024-03-29 | v1.7 | 网络拓扑网段搜索过滤；优化流速图交互样式 |
 | 2024-03-29 | v1.8 | 添加连接运行时长显示 |
+| 2024-03-29 | v1.9 | 添加 Docker 部署支持 |
 
 ## 🙏 致谢
 

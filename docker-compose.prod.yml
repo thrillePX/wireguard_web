@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: wireguard-backend
+    network_mode: host
+    privileged: true
+    volumes:
+      - /etc/wireguard:/etc/wireguard:ro
+    environment:
+      - WG_PATH=/etc/wireguard
+      - FLASK_PORT=5001
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: wireguard-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge

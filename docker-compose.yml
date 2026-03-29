@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: wireguard-backend
+    network_mode: host
+    privileged: true
+    volumes:
+      - /etc/wireguard:/etc/wireguard:ro
+      - wireguard-data:/app/data
+    environment:
+      - WG_PATH=/etc/wireguard
+      - FLASK_PORT=5001
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: wireguard-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  wireguard-data:
