@@ -29,6 +29,8 @@
 - ✅ 导入/导出配置文件
 - ✅ 智能排序（已连接 → 固定 → 使用频率）
 - ✅ 固定常用连接置顶
+- ✅ **批量选择和批量操作**
+- ✅ **搜索过滤功能**
 
 ### 实时监控
 - 📊 实时流速监控（bit/s）
@@ -47,14 +49,32 @@
 - 📝 表单式编辑配置
 - 📄 保留原始文本编辑
 
+### 用户界面
+- 🌙 **暗色模式** 一键切换
+- ⌨️ **键盘快捷键** 导航（J/K/Enter/）
+- 📊 **历史统计** 查看连接次数和累计时长
+- 💬 **Toast 通知** 操作反馈
+- 📱 **移动端适配** 响应式布局
+- 🔄 **自动备份** 编辑前自动备份配置
+
 ## 🏗 技术架构
 
 ### 技术栈
 ```
 前端: Vue 3 + Vite + Vue Router
 后端: Python Flask
-通信: RESTful API
+通信: RESTful API (v1 版本控制)
 平台: macOS / Linux
+```
+
+### API 版本
+所有 API 端点使用 v1 版本控制：
+```
+/api/v1/health              # 健康检查
+/api/v1/connections         # 连接管理
+/api/v1/keys/generate       # 密钥生成
+/api/v1/stats/connections   # 连接统计
+/api/v1/backups             # 配置备份
 ```
 
 ### 架构图
@@ -91,21 +111,28 @@
 ```
 wireguardweb/
 ├── backend/
-│   ├── app.py                 # Flask 主应用 (API 路由)
+│   ├── app.py                 # Flask 主应用 (API v1 路由)
 │   ├── wireguard_manager.py   # WireGuard 核心管理类
 │   ├── config.py              # 配置 (端口、路径)
+│   ├── validators.py          # 输入验证
+│   ├── errors.py              # 错误处理和日志
+│   ├── connection_history.py   # 连接历史统计
+│   ├── config_backup.py       # 配置文件备份
 │   └── requirements.txt       # Python 依赖
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── App.vue                    # 根组件 (导航栏)
+│   │   ├── App.vue                    # 根组件 (导航栏、主题切换)
 │   │   ├── main.js                    # Vue 入口
 │   │   ├── router/
 │   │   │   └── index.js              # 路由配置
 │   │   ├── api/
-│   │   │   └── index.js              # API 调用封装
+│   │   │   └── index.js              # API 调用封装 (重试机制)
+│   │   ├── components/
+│   │   │   ├── Toast.vue             # Toast 通知组件
+│   │   │   └── Loading.vue           # Loading 加载组件
 │   │   ├── composables/
-│   │   │   └── useConnectionHistory.js # 连接历史追踪
+│   │   │   └── useToast.js           # Toast 管理钩子
 │   │   └── views/
 │   │       ├── ConnectionList.vue    # 连接列表页
 │   │       ├── ConnectionDetail.vue  # 连接详情页
@@ -115,7 +142,10 @@ wireguardweb/
 │   ├── vite.config.js
 │   └── index.html
 │
-├── start.sh                  # 一键启动脚本
+├── Dockerfile                 # 后端 Docker 镜像
+├── docker-compose.yml         # 开发环境编排
+├── deploy.sh                  # 一键部署脚本
+├── start.sh                   # 传统部署启动脚本
 └── README.md
 ```
 
@@ -341,6 +371,9 @@ bytes_to_bits = bytes × 8
 | 2024-03-29 | v1.7 | 网络拓扑网段搜索过滤；优化流速图交互样式 |
 | 2024-03-29 | v1.8 | 添加连接运行时长显示 |
 | 2024-03-29 | v1.9 | 添加 Docker 部署支持 |
+| 2024-03-30 | v2.0 | API v1 版本控制、输入验证、连接历史统计、配置备份 |
+| 2024-03-30 | v2.1 | 添加暗色模式、搜索功能、Toast 通知、Loading 状态 |
+| 2024-03-30 | v2.2 | 添加批量选择、键盘快捷键、移动端适配、历史统计面板 |
 
 ## 🙏 致谢
 
