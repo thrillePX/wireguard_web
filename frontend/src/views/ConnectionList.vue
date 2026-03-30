@@ -457,7 +457,8 @@ function resetNewConnectionForm() {
 async function loadConnections() {
   try {
     const data = await api.listConnections()
-    connections.value = data.sort((a, b) => {
+    const connList = Array.isArray(data) ? data : (data.connections || [])
+    connections.value = connList.sort((a, b) => {
       const scoreA = getSortScore(a)
       const scoreB = getSortScore(b)
       return scoreB - scoreA
