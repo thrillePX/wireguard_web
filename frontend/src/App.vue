@@ -662,4 +662,16 @@ button {
   color: white;
   border-color: var(--accent-color);
 }
+
+/* 穿透 scoped 样式覆盖硬编码颜色 */
+.dark-mode [style*="background: white"] {
+  background: var(--bg-card) !important;
+}
+
+.dark-mode .connection-list [style],
+.dark-mode .connection-detail [style],
+.dark-mode .topology [style],
+.dark-mode .settings [style] {
+  background: var(--bg-card) !important;
+}
 </style>

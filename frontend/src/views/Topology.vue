@@ -245,7 +245,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1.5rem;
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   margin-bottom: 1.5rem;
@@ -279,7 +279,7 @@ onUnmounted(() => {
   left: 3px;
   width: 20px;
   height: 20px;
-  background: white;
+  background: var(--bg-card);
   border-radius: 50%;
   transition: all 0.3s;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
@@ -460,7 +460,7 @@ onUnmounted(() => {
 }
 
 .vpn-node {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 1rem 1.5rem;
   margin: 1rem 0;
@@ -621,7 +621,7 @@ onUnmounted(() => {
 .empty-state {
   text-align: center;
   padding: 3rem;
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
@@ -651,7 +651,7 @@ onUnmounted(() => {
 }
 
 .modal {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 2rem;
   width: 90%;

@@ -912,7 +912,7 @@ onUnmounted(() => {
 }
 
 .section {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -1297,7 +1297,7 @@ onUnmounted(() => {
 }
 
 .modal {
-  background: white;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 2rem;
   width: 90%;
@@ -1391,7 +1391,7 @@ onUnmounted(() => {
 }
 
 .btn-disconnect {
-  background: white;
+  background: var(--bg-card);
   color: #e74c3c;
   font-weight: 500;
   padding: 0.75rem 1.5rem;
@@ -1511,7 +1511,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: white;
+  background: var(--bg-card);
   padding: 0.75rem;
   border-radius: 6px;
   border: 1px solid #ddd;
