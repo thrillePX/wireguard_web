@@ -67,7 +67,7 @@
       </button>
     </div>
 
-    <div v-else class="connection-grid" ref="connectionGrid">
+    <div class="connection-grid" ref="connectionGrid">
       <div 
         v-for="(conn, index) in filteredConnections" 
         :key="conn.name" 
