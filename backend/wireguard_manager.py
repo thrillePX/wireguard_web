@@ -4,7 +4,10 @@ import uuid
 import re
 import platform
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from connection_history import ConnectionHistory
+from config_backup import ConfigBackup
 
 class WireGuardManager:
     def __init__(self, base_path='/etc/wireguard/'):
@@ -12,6 +15,8 @@ class WireGuardManager:
         os.makedirs(self.base_path, exist_ok=True)
         self.data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
         os.makedirs(self.data_dir, exist_ok=True)
+        self.history = ConnectionHistory(self.data_dir)
+        self.backup = ConfigBackup(self.data_dir)
     
     def get_uptime_file(self, config_name):
         """获取连接启动时间记录文件路径"""
@@ -196,6 +201,7 @@ class WireGuardManager:
                 )
                 if result.returncode == 0:
                     self.record_uptime_start(config_name)
+                    self.history.record_connect(config_name)
                     return True, "连接成功"
                 else:
                     return False, result.stderr or "连接失败"
@@ -207,6 +213,7 @@ class WireGuardManager:
                 )
                 if result.returncode == 0:
                     self.record_uptime_start(config_name)
+                    self.history.record_connect(config_name)
                     return True, "连接成功"
                 else:
                     return False, result.stderr or "连接失败"
@@ -228,6 +235,7 @@ class WireGuardManager:
                 )
                 if result.returncode == 0:
                     self.record_uptime_end(config_name)
+                    self.history.record_disconnect(config_name)
                     return True, "已断开连接"
                 else:
                     return False, result.stderr or "断开失败"
@@ -238,6 +246,8 @@ class WireGuardManager:
                     text=True
                 )
                 if result.returncode == 0:
+                    self.record_uptime_end(config_name)
+                    self.history.record_disconnect(config_name)
                     return True, "已断开连接"
                 else:
                     return False, result.stderr or "断开失败"
@@ -478,6 +488,11 @@ class WireGuardManager:
             return False, "连接不存在"
         
         try:
+            with open(config_path, 'r') as f:
+                old_config = f.read()
+            
+            self.backup.backup(name, old_config)
+            
             with open(config_path, 'w') as f:
                 f.write(config_content)
             os.chmod(config_path, 0o600)
