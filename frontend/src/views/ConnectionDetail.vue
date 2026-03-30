@@ -48,7 +48,7 @@
           </div>
           <div v-if="connection.status.peers && connection.status.peers.length > 0" class="stat-card">
             <div class="stat-label">最后握手</div>
-            <div class="stat-value">{{ connection.status.peers[0].latest_handshake || 'N/A' }}</div>
+            <div class="stat-value">{{ formatTimeAgo(connection.status.peers[0].latest_handshake) }}</div>
           </div>
         </div>
 
@@ -372,10 +372,12 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useToast } from '../composables/useToast'
 import { api } from '../api'
 
 const router = useRouter()
 const route = useRoute()
+const toast = useToast()
 
 const connectionName = route.params.name
 const connection = ref({})
@@ -603,32 +605,52 @@ function goBack() {
   router.push('/')
 }
 
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    toast.success('已复制到剪贴板')
+  }).catch(() => {
+    toast.error('复制失败')
+  })
+}
+
+function formatTimeAgo(text) {
+  if (!text) return 'N/A'
+  if (typeof text !== 'string') return text
+  return text
+    .replace('week', '周')
+    .replace('day', '天')
+    .replace('hour', '小时')
+    .replace('minute', '分钟')
+    .replace('second', '秒')
+    .replace('ago', '前')
+}
+
 async function handleConnect() {
   try {
     const result = await api.connect(connectionName)
-    alert(result.message || '连接成功')
+    toast.success(result.message || '连接成功')
     loadConnection()
   } catch (err) {
-    alert('连接失败: ' + err.message)
+    toast.error('连接失败: ' + err.message)
   }
 }
 
 async function handleDisconnect() {
   try {
     const result = await api.disconnect(connectionName)
-    alert(result.message || '已断开')
+    toast.success(result.message || '已断开')
     loadConnection()
   } catch (err) {
-    alert('断开失败: ' + err.message)
+    toast.error('断开失败: ' + err.message)
   }
 }
 
 async function handleExport() {
   try {
     await api.exportConfig(connectionName)
-    alert('配置文件已导出')
+    toast.success('配置文件已导出')
   } catch (err) {
-    alert('导出失败: ' + err.message)
+    toast.error('导出失败: ' + err.message)
   }
 }
 
@@ -636,10 +658,10 @@ async function confirmDelete() {
   if (confirm(`确定要删除连接 "${connectionName}" 吗？`)) {
     try {
       await api.deleteConnection(connectionName)
-      alert('连接已删除')
+      toast.success('连接已删除')
       router.push('/')
     } catch (err) {
-      alert('删除失败: ' + err.message)
+      toast.error('删除失败: ' + err.message)
     }
   }
 }
@@ -695,11 +717,11 @@ async function saveConfig() {
       config = editConfig.value
     }
     await api.updateConnection(connectionName, config)
-    alert('配置已保存')
+    toast.success('配置已保存')
     showEditModal.value = false
     loadConnection()
   } catch (err) {
-    alert('保存失败: ' + err.message)
+    toast.error('保存失败: ' + err.message)
   } finally {
     saving.value = false
   }
@@ -792,7 +814,7 @@ async function generateEditKeys() {
     editForm.value.privateKey = keys.privateKey
     editForm.value.generatedPublicKey = keys.publicKey
   } catch (error) {
-    alert('生成密钥失败: ' + error.message)
+    toast.error('生成密钥失败: ' + error.message)
   } finally {
     generatingKeys.value = false
   }
@@ -804,18 +826,10 @@ async function generateEditPresharedKey() {
     const result = await api.generatePresharedKey()
     editForm.value.presharedKey = result.presharedKey
   } catch (error) {
-    alert('生成预共享密钥失败: ' + error.message)
+    toast.error('生成预共享密钥失败: ' + error.message)
   } finally {
     generatingKeys.value = false
   }
-}
-
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    alert('已复制到剪贴板')
-  }).catch(() => {
-    alert('复制失败')
-  })
 }
 
 function formatBytes(bytes) {

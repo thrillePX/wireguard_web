@@ -13,14 +13,26 @@
     </div>
 
     <div class="filter-bar">
-      <label class="filter-toggle">
-        <input type="checkbox" v-model="filterOnlyConnected" />
-        <span class="toggle-slider"></span>
-        <span class="toggle-label">仅显示已连接</span>
-      </label>
-      <span class="filter-count">
-        {{ filteredConnections.length }} / {{ connections.length }}
-      </span>
+      <div class="filter-left">
+        <label class="filter-toggle">
+          <input type="checkbox" v-model="filterOnlyConnected" />
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">仅显示已连接</span>
+        </label>
+        <span class="filter-count">
+          {{ filteredConnections.length }} / {{ connections.length }}
+        </span>
+      </div>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          v-model="searchQuery" 
+          placeholder="搜索名称或服务端..."
+          class="search-input"
+        />
+        <button v-if="searchQuery" @click="searchQuery = ''" class="search-clear">&times;</button>
+      </div>
     </div>
 
     <div v-if="loading" class="loading">
@@ -69,10 +81,12 @@
           <div v-if="conn.interface" class="info-row">
             <span class="label">本地 IP:</span>
             <span class="value">{{ conn.interface.Address }}</span>
+            <button @click="copyToClipboard(conn.interface.Address)" class="copy-btn">复制</button>
           </div>
           <div v-if="conn.peer" class="info-row">
             <span class="label">服务端:</span>
             <span class="value endpoint">{{ conn.peer.Endpoint || 'N/A' }}</span>
+            <button v-if="conn.peer.Endpoint" @click="copyToClipboard(conn.peer.Endpoint)" class="copy-btn">复制</button>
           </div>
           <div v-if="conn.interface_name" class="info-row">
             <span class="label">接口:</span>
@@ -354,6 +368,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
 import { useConnectionHistory } from '../composables/useConnectionHistory'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
 const connections = ref([])
@@ -366,15 +381,29 @@ const addMode = ref('form')
 const selectedFile = ref(null)
 const fileInput = ref(null)
 const filterOnlyConnected = ref(true)
+const searchQuery = ref('')
 let refreshInterval = null
 
 const { getSortScore, recordUsage, togglePin, getConnectionInfo } = useConnectionHistory()
+const toast = useToast()
 
 const filteredConnections = computed(() => {
+  let result = connections.value
+  
   if (filterOnlyConnected.value) {
-    return connections.value.filter(conn => conn.connected)
+    result = result.filter(conn => conn.connected)
   }
-  return connections.value
+  
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(conn => 
+      conn.name.toLowerCase().includes(query) ||
+      (conn.peer?.Endpoint || '').toLowerCase().includes(query) ||
+      (conn.interface?.Address || '').toLowerCase().includes(query)
+    )
+  }
+  
+  return result
 })
 
 const newConnection = ref({
@@ -409,7 +438,7 @@ async function generateInterfaceKeys() {
     newConnection.value.privateKey = keys.privateKey
     newConnection.value.generatedPublicKey = keys.publicKey
   } catch (error) {
-    alert('生成密钥失败: ' + error.message)
+    toast.error('生成密钥失败: ' + error.message)
   } finally {
     generatingKeys.value = false
   }
@@ -417,9 +446,9 @@ async function generateInterfaceKeys() {
 
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(() => {
-    alert('已复制到剪贴板')
+    toast.success('已复制到剪贴板')
   }).catch(() => {
-    alert('复制失败')
+    toast.error('复制失败')
   })
 }
 
@@ -429,7 +458,7 @@ async function generatePresharedKey() {
     const result = await api.generatePresharedKey()
     newConnection.value.presharedKey = result.presharedKey
   } catch (error) {
-    alert('生成预共享密钥失败: ' + error.message)
+    toast.error('生成预共享密钥失败: ' + error.message)
   } finally {
     generatingKeys.value = false
   }
@@ -474,10 +503,10 @@ async function handleConnect(name) {
   try {
     recordUsage(name)
     const result = await api.connect(name)
-    alert(result.message || '连接成功')
+    toast.success(result.message || '连接成功')
     loadConnections()
   } catch (error) {
-    alert('连接失败: ' + error.message)
+    toast.error('连接失败: ' + error.message)
   }
 }
 
@@ -485,10 +514,10 @@ async function handleDisconnect(name) {
   try {
     recordUsage(name)
     const result = await api.disconnect(name)
-    alert(result.message || '已断开')
+    toast.success(result.message || '已断开')
     loadConnections()
   } catch (error) {
-    alert('断开失败: ' + error.message)
+    toast.error('断开失败: ' + error.message)
   }
 }
 
@@ -504,9 +533,9 @@ function handleTogglePin(name) {
 async function handleExport(name) {
   try {
     await api.exportConfig(name)
-    alert('配置文件已导出')
+    toast.success('配置文件已导出')
   } catch (error) {
-    alert('导出失败: ' + error.message)
+    toast.error('导出失败: ' + error.message)
   }
 }
 
@@ -514,10 +543,10 @@ async function confirmDelete(name) {
   if (confirm(`确定要删除连接 "${name}" 吗？`)) {
     try {
       await api.deleteConnection(name)
-      alert('连接已删除')
+      toast.success('连接已删除')
       loadConnections()
     } catch (error) {
-      alert('删除失败: ' + error.message)
+      toast.error('删除失败: ' + error.message)
     }
   }
 }
@@ -531,7 +560,7 @@ async function importFile() {
   
   try {
     const result = await api.importConfig(selectedFile.value)
-    alert(result.message || '导入成功')
+    toast.success(result.message || '导入成功')
     showImportModal.value = false
     selectedFile.value = null
     if (fileInput.value) {
@@ -539,7 +568,7 @@ async function importFile() {
     }
     loadConnections()
   } catch (error) {
-    alert('导入失败: ' + error.message)
+    toast.error('导入失败: ' + error.message)
   }
 }
 
@@ -555,12 +584,12 @@ async function addConnection() {
     }
     
     await api.addConnection(newConnection.value.name, config)
-    alert('连接已添加')
+    toast.success('连接已添加')
     showAddModal.value = false
     resetNewConnectionForm()
     loadConnections()
   } catch (error) {
-    alert('添加失败: ' + error.message)
+    toast.error('添加失败: ' + error.message)
   } finally {
     adding.value = false
   }
@@ -1109,6 +1138,14 @@ onUnmounted(() => {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .filter-toggle {
@@ -1162,5 +1199,60 @@ onUnmounted(() => {
   font-size: 0.9rem;
   color: #666;
   font-weight: 500;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  gap: 0.5rem;
+}
+
+.search-icon {
+  font-size: 1rem;
+  opacity: 0.5;
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.9rem;
+  width: 200px;
+  color: var(--text-primary);
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.search-clear {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.search-clear:hover {
+  color: #666;
+}
+
+.dark-mode .search-box {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.dark-mode .search-input {
+  color: #f1f5f9;
+}
+
+.info-row {
+  position: relative;
 }
 </style>
