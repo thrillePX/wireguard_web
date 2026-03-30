@@ -43,11 +43,11 @@
       </div>
     </div>
 
-    <div v-if="selectedConnections.length > 0" class="batch-actions">
+    <div v-if="batchMode && selectedConnections.length > 0" class="batch-actions">
       <span>已选择 {{ selectedConnections.length }} 个</span>
       <button @click="batchConnect" class="btn-connect">批量连接</button>
       <button @click="batchDisconnect" class="btn-disconnect">批量断开</button>
-      <button @click="selectedConnections = []" class="btn-secondary">取消</button>
+      <button @click="selectedConnections = []; batchMode = false" class="btn-secondary">取消</button>
     </div>
 
     <div v-else-if="loading" class="loading">
