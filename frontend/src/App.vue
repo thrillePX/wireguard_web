@@ -58,24 +58,219 @@ onMounted(() => {
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-card: #ffffff;
+  --bg-input: #ffffff;
   --text-primary: #1f2937;
   --text-secondary: #6b7280;
   --border-color: #e5e7eb;
   --accent-color: #667eea;
   --success-color: #10b981;
   --danger-color: #ef4444;
+  --shadow: rgba(0,0,0,0.1);
 }
 
 .dark-mode {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-card: #1e293b;
+  --bg-input: #334155;
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --border-color: #334155;
   --accent-color: #818cf8;
   --success-color: #34d399;
   --danger-color: #f87171;
+  --shadow: rgba(0,0,0,0.3);
+}
+
+.dark-mode body,
+.dark-mode {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.dark-mode .connection-list,
+.dark-mode .connection-detail,
+.dark-mode .topology,
+.dark-mode .settings,
+.dark-mode .server-list,
+.dark-mode .server-detail,
+.dark-mode .modal,
+.dark-mode .form-group {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.dark-mode .header h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode .stat-label,
+.dark-mode .config-item .key,
+.dark-mode .value {
+  color: var(--text-primary);
+}
+
+.dark-mode .info-row,
+.dark-mode .modal-header,
+.dark-mode .modal-footer,
+.dark-mode .config-block,
+.dark-mode .tab-content {
+  border-color: var(--border-color);
+}
+
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select {
+  background: var(--bg-input);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark-mode .btn-secondary {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.dark-mode .status-badge.disconnected {
+  background: var(--bg-input);
+}
+
+.dark-mode .empty {
+  background: var(--bg-card);
+}
+
+.dark-mode .loading {
+  color: var(--text-secondary);
+}
+
+.dark-mode .error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
+}
+
+.dark-mode .spinner {
+  border-color: var(--border-color);
+  border-top-color: var(--accent-color);
+}
+
+.dark-mode .toggle-slider {
+  background: var(--border-color);
+}
+
+.dark-mode .toggle-slider:before {
+  background: white;
+}
+
+.dark-mode input:checked + .toggle-slider {
+  background: var(--accent-color);
+}
+
+.dark-mode .traffic-section,
+.dark-mode .speed-display,
+.dark-mode .speed-chart,
+.dark-mode .config-section {
+  background: var(--bg-input);
+}
+
+.dark-mode .line-chart {
+  background: var(--bg-input);
+}
+
+.dark-mode .chart-title,
+.dark-mode .chart-legend {
+  color: var(--text-secondary);
+}
+
+.dark-mode .chart-tooltip {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.dark-mode .node circle,
+.dark-mode .node rect {
+  stroke: var(--accent-color);
+}
+
+.dark-mode .link {
+  stroke: var(--border-color);
+}
+
+.dark-mode .connection-grid {
+  background: transparent;
+}
+
+.dark-mode .connection-card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.dark-mode .connection-card:hover {
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.dark-mode .empty-icon {
+  opacity: 0.8;
+}
+
+.dark-mode .tab-btn {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+.dark-mode .tab-btn.active {
+  background: var(--accent-color);
+  color: white;
+}
+
+.dark-mode .form-group label {
+  color: var(--text-primary);
+}
+
+.dark-mode .generated-key {
+  background: var(--bg-input);
+  border-color: var(--border-color);
+}
+
+.dark-mode .stat-card {
+  background: var(--bg-input);
+}
+
+.dark-mode .stat-value {
+  color: var(--accent-color);
+}
+
+.dark-mode .btn-back {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.dark-mode .btn-back:hover {
+  background: var(--border-color);
+}
+
+.dark-mode .config-block {
+  background: var(--bg-input);
+}
+
+.dark-mode .config-block h4 {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.dark-mode .section {
+  background: var(--bg-card);
+}
+
+.dark-mode .total-traffic {
+  background: var(--bg-input);
+}
+
+.dark-mode .legend-item {
+  color: var(--text-secondary);
 }
 
 * {
