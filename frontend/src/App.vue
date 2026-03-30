@@ -273,6 +273,98 @@ onMounted(() => {
   color: var(--text-secondary);
 }
 
+.dark-mode body,
+.dark-mode p,
+.dark-mode span,
+.dark-mode div,
+.dark-mode label,
+.dark-mode td,
+.dark-mode th,
+.dark-mode li {
+  color: var(--text-primary);
+}
+
+.dark-mode .text-secondary,
+.dark-mode .muted,
+.dark-mode .text-muted {
+  color: var(--text-secondary) !important;
+}
+
+.dark-mode .endpoint {
+  color: var(--accent-color);
+}
+
+.dark-mode .info-row .value {
+  color: var(--text-primary);
+}
+
+.dark-mode .info-row .label {
+  color: var(--text-secondary);
+}
+
+.dark-mode .speed-label {
+  color: var(--text-secondary);
+}
+
+.dark-mode .speed-value {
+  color: var(--success-color);
+}
+
+.dark-mode .chart-title {
+  color: var(--text-primary);
+}
+
+.dark-mode .total-label {
+  color: var(--text-secondary);
+}
+
+.dark-mode .total-value {
+  color: var(--text-primary);
+}
+
+.dark-mode .config-item {
+  background: transparent;
+}
+
+.dark-mode .config-item .key {
+  color: var(--text-secondary);
+}
+
+.dark-mode .config-item .value {
+  color: var(--text-primary);
+}
+
+.dark-mode .allowed-ips {
+  color: var(--accent-color);
+}
+
+.dark-mode .link-label {
+  color: var(--text-primary);
+  fill: var(--text-primary);
+}
+
+.dark-mode .node-label {
+  color: var(--text-primary);
+  fill: var(--text-primary);
+}
+
+.dark-mode .search-input {
+  color: var(--text-primary);
+}
+
+.dark-mode .toggle-label {
+  color: var(--text-primary);
+}
+
+.dark-mode .filter-count {
+  color: var(--text-secondary);
+}
+
+.dark-mode .empty p,
+.dark-mode .empty-icon {
+  color: var(--text-secondary);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
