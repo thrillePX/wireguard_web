@@ -418,7 +418,8 @@ const tooltipPosition = ref({ left: '0px', top: '0px' })
 
 async function loadConnection() {
   try {
-    connection.value = await api.getConnection(connectionName)
+    const data = await api.getConnection(connectionName)
+    connection.value = data.connection || data
     if (!connection.value) {
       error.value = '连接不存在'
     }

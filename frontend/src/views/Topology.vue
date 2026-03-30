@@ -188,7 +188,8 @@ function formatBytes(bytes) {
 async function loadConnections() {
   try {
     const data = await api.listConnections()
-    connections.value = data.sort((a, b) => {
+    const connList = Array.isArray(data) ? data : (data.connections || [])
+    connections.value = connList.sort((a, b) => {
       if (a.connected && !b.connected) return -1
       if (!a.connected && b.connected) return 1
       return 0
