@@ -77,7 +77,6 @@
           { 'selected': selectedConnections.includes(conn.name) },
           { 'focused': focusedIndex === index }
         ]"
-        @click="handleCardClick(conn.name, $event)"
       >
         <div class="card-header">
           <div class="connection-name">
@@ -88,6 +87,7 @@
               @click.stop
               @change="toggleSelect(conn.name)"
               class="batch-checkbox"
+              :title="selectedConnections.includes(conn.name) ? '取消选择' : '选择'"
             />
             <span :class="['status-dot', conn.connected ? 'active' : '']"></span>
             <h3>{{ conn.name }}</h3>
@@ -1473,10 +1473,11 @@ onUnmounted(() => {
 }
 
 .batch-checkbox {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   cursor: pointer;
   accent-color: var(--accent-color);
+  margin-right: 0.5rem;
 }
 
 .toggle-slider.small {
