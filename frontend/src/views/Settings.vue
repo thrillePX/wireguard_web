@@ -50,6 +50,49 @@
       </button>
     </div>
 
+    <div class="section" v-if="historyStats.length > 0">
+      <h3>历史记录统计</h3>
+      <div class="history-stats">
+        <div v-for="item in historyStats" :key="item.connection" class="history-item">
+          <div class="history-name">{{ item.connection }}</div>
+          <div class="history-details">
+            <span>连接 {{ item.total_connects }} 次</span>
+            <span>累计 {{ item.total_duration_formatted }}</span>
+            <span>平均 {{ item.avg_duration_formatted }}/次</span>
+          </div>
+        </div>
+      </div>
+      <button @click="loadHistoryStats" class="btn-secondary" :disabled="loadingHistory">
+        {{ loadingHistory ? '加载中...' : '刷新历史' }}
+      </button>
+    </div>
+
+    <div class="section">
+      <h3>快捷键</h3>
+      <div class="shortcuts-grid">
+        <div class="shortcut-item">
+          <kbd>J</kbd> / <kbd>↓</kbd>
+          <span>下一个连接</span>
+        </div>
+        <div class="shortcut-item">
+          <kbd>K</kbd> / <kbd>↑</kbd>
+          <span>上一个连接</span>
+        </div>
+        <div class="shortcut-item">
+          <kbd>Enter</kbd>
+          <span>连接/断开选中项</span>
+        </div>
+        <div class="shortcut-item">
+          <kbd>/</kbd>
+          <span>聚焦搜索框</span>
+        </div>
+        <div class="shortcut-item">
+          <kbd>Esc</kbd>
+          <span>取消批量选择</span>
+        </div>
+      </div>
+    </div>
+
     <div class="section">
       <h3>使用说明</h3>
       <div class="instructions">
@@ -89,6 +132,8 @@ const saving = ref(false)
 const message = ref('')
 const messageType = ref('success')
 const stats = ref({})
+const historyStats = ref([])
+const loadingHistory = ref(false)
 
 async function loadConfigPath() {
   try {
@@ -128,9 +173,22 @@ function refreshStats() {
   loadStats()
 }
 
+async function loadHistoryStats() {
+  loadingHistory.value = true
+  try {
+    const result = await api.getAllStats()
+    historyStats.value = result.stats || []
+  } catch (error) {
+    console.error('加载历史统计失败:', error)
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
 onMounted(() => {
   loadConfigPath()
   loadStats()
+  loadHistoryStats()
 })
 </script>
 
@@ -303,5 +361,72 @@ h2 {
 
 .btn-secondary:hover {
   background: #e9ecef;
+}
+
+.history-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.history-item {
+  padding: 0.75rem 1rem;
+  background: var(--bg-input);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.history-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.history-details {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-input);
+  border-radius: 8px;
+}
+
+.shortcut-item kbd {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--accent-color);
+}
+
+.shortcut-item span {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .history-details {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .shortcuts-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

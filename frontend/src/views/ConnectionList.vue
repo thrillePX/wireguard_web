@@ -1,5 +1,7 @@
 <template>
   <div class="connection-list">
+    <Loading :show="loading" text="加载中..." />
+    
     <div class="header">
       <h2>WireGuard 连接列表</h2>
       <div class="header-actions">
@@ -22,6 +24,11 @@
         <span class="filter-count">
           {{ filteredConnections.length }} / {{ connections.length }}
         </span>
+        <label class="batch-toggle" v-if="filteredConnections.length > 0">
+          <input type="checkbox" v-model="batchMode" />
+          <span class="toggle-slider small"></span>
+          <span class="toggle-label">批量选择</span>
+        </label>
       </div>
       <div class="search-box">
         <span class="search-icon">🔍</span>
@@ -30,12 +37,20 @@
           v-model="searchQuery" 
           placeholder="搜索名称或服务端..."
           class="search-input"
+          ref="searchInput"
         />
         <button v-if="searchQuery" @click="searchQuery = ''" class="search-clear">&times;</button>
       </div>
     </div>
 
-    <div v-if="loading" class="loading">
+    <div v-if="selectedConnections.length > 0" class="batch-actions">
+      <span>已选择 {{ selectedConnections.length }} 个</span>
+      <button @click="batchConnect" class="btn-connect">批量连接</button>
+      <button @click="batchDisconnect" class="btn-disconnect">批量断开</button>
+      <button @click="selectedConnections = []" class="btn-secondary">取消</button>
+    </div>
+
+    <div v-else-if="loading" class="loading">
       <div class="spinner"></div>
       加载中...
     </div>
@@ -52,14 +67,28 @@
       </button>
     </div>
 
-    <div v-else class="connection-grid">
+    <div v-else class="connection-grid" ref="connectionGrid">
       <div 
-        v-for="conn in filteredConnections" 
+        v-for="(conn, index) in filteredConnections" 
         :key="conn.name" 
-        :class="['connection-card', conn.connected ? 'connected' : 'disconnected']"
+        :class="[
+          'connection-card', 
+          conn.connected ? 'connected' : 'disconnected',
+          { 'selected': selectedConnections.includes(conn.name) },
+          { 'focused': focusedIndex === index }
+        ]"
+        @click="handleCardClick(conn.name, $event)"
       >
         <div class="card-header">
           <div class="connection-name">
+            <input 
+              v-if="batchMode" 
+              type="checkbox" 
+              :checked="selectedConnections.includes(conn.name)"
+              @click.stop
+              @change="toggleSelect(conn.name)"
+              class="batch-checkbox"
+            />
             <span :class="['status-dot', conn.connected ? 'active' : '']"></span>
             <h3>{{ conn.name }}</h3>
           </div>
@@ -364,11 +393,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
 import { useConnectionHistory } from '../composables/useConnectionHistory'
 import { useToast } from '../composables/useToast'
+import Loading from '../components/Loading.vue'
 
 const router = useRouter()
 const connections = ref([])
@@ -382,6 +412,12 @@ const selectedFile = ref(null)
 const fileInput = ref(null)
 const filterOnlyConnected = ref(true)
 const searchQuery = ref('')
+const batchMode = ref(false)
+const selectedConnections = ref([])
+const focusedIndex = ref(-1)
+const searchInput = ref(null)
+const connectionGrid = ref(null)
+const connectingIds = ref(new Set())
 let refreshInterval = null
 
 const { getSortScore, recordUsage, togglePin, getConnectionInfo } = useConnectionHistory()
@@ -498,6 +534,114 @@ async function loadConnections() {
     loading.value = false
   }
 }
+
+function toggleSelect(name) {
+  const index = selectedConnections.value.indexOf(name)
+  if (index === -1) {
+    selectedConnections.value.push(name)
+  } else {
+    selectedConnections.value.splice(index, 1)
+  }
+}
+
+function handleCardClick(name, event) {
+  if (batchMode.value) {
+    toggleSelect(name)
+  }
+}
+
+async function batchConnect() {
+  for (const name of selectedConnections.value) {
+    const conn = connections.value.find(c => c.name === name)
+    if (conn && !conn.connected) {
+      connectingIds.value.add(name)
+      try {
+        await api.connect(name)
+      } catch (e) {
+        toast.error(`${name} 连接失败`)
+      }
+      connectingIds.value.delete(name)
+    }
+  }
+  selectedConnections.value = []
+  batchMode.value = false
+  loadConnections()
+}
+
+async function batchDisconnect() {
+  for (const name of selectedConnections.value) {
+    const conn = connections.value.find(c => c.name === name)
+    if (conn && conn.connected) {
+      connectingIds.value.add(name)
+      try {
+        await api.disconnect(name)
+      } catch (e) {
+        toast.error(`${name} 断开失败`)
+      }
+      connectingIds.value.delete(name)
+    }
+  }
+  selectedConnections.value = []
+  batchMode.value = false
+  loadConnections()
+}
+
+function handleKeydown(event) {
+  if (event.target.tagName === 'INPUT') return
+  
+  const list = filteredConnections.value
+  if (list.length === 0) return
+  
+  switch (event.key) {
+    case 'j':
+    case 'ArrowDown':
+      event.preventDefault()
+      focusedIndex.value = Math.min(focusedIndex.value + 1, list.length - 1)
+      scrollToFocused()
+      break
+    case 'k':
+    case 'ArrowUp':
+      event.preventDefault()
+      focusedIndex.value = Math.max(focusedIndex.value - 1, 0)
+      scrollToFocused()
+      break
+    case 'Enter':
+      if (focusedIndex.value >= 0) {
+        event.preventDefault()
+        const conn = list[focusedIndex.value]
+        if (conn.connected) {
+          handleDisconnect(conn.name)
+        } else {
+          handleConnect(conn.name)
+        }
+      }
+      break
+    case '/':
+      event.preventDefault()
+      searchInput.value?.focus()
+      break
+    case 'Escape':
+      batchMode.value = false
+      selectedConnections.value = []
+      focusedIndex.value = -1
+      break
+  }
+}
+
+function scrollToFocused() {
+  const grid = connectionGrid.value
+  if (!grid) return
+  const cards = grid.querySelectorAll('.connection-card')
+  if (cards[focusedIndex.value]) {
+    cards[focusedIndex.value].scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+}
+
+onMounted(() => {
+  loadConnections()
+  refreshInterval = setInterval(loadConnections, 30000)
+  window.addEventListener('keydown', handleKeydown)
+})
 
 async function handleConnect(name) {
   try {
@@ -640,6 +784,7 @@ onUnmounted(() => {
   if (refreshInterval) {
     clearInterval(refreshInterval)
   }
+  window.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
@@ -1254,5 +1399,105 @@ onUnmounted(() => {
 
 .info-row {
   position: relative;
+}
+
+.batch-toggle {
+  margin-left: 1rem;
+}
+
+.batch-toggle .toggle-slider.small {
+  width: 32px;
+  height: 16px;
+}
+
+.batch-toggle .toggle-slider.small::before {
+  width: 12px;
+  height: 12px;
+  top: 2px;
+}
+
+.batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--accent-color);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.batch-actions span {
+  flex: 1;
+  font-weight: 500;
+}
+
+.connection-card.selected {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.connection-card.focused {
+  box-shadow: 0 0 0 2px var(--accent-color);
+  transform: translateY(-2px);
+}
+
+.batch-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent-color);
+}
+
+.toggle-slider.small {
+  width: 36px;
+  height: 18px;
+}
+
+.toggle-slider.small::before {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .filter-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .filter-left {
+    flex-wrap: wrap;
+  }
+  
+  .search-box {
+    width: 100%;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+  
+  .connection-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .batch-actions {
+    flex-wrap: wrap;
+  }
+  
+  .nav-links {
+    gap: 1rem;
+    font-size: 0.9rem;
+  }
 }
 </style>
