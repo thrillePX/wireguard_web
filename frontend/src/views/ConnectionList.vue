@@ -1403,17 +1403,47 @@ onUnmounted(() => {
 
 .batch-toggle {
   margin-left: 1rem;
+  display: flex;
+  align-items: center;
 }
 
-.batch-toggle .toggle-slider.small {
-  width: 32px;
-  height: 16px;
+.batch-toggle input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
-.batch-toggle .toggle-slider.small::before {
-  width: 12px;
-  height: 12px;
+.batch-toggle .toggle-slider {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 18px;
+  background: var(--border-color);
+  border-radius: 18px;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-right: 0.5rem;
+}
+
+.batch-toggle input:checked + .toggle-slider {
+  background: var(--accent-color);
+}
+
+.batch-toggle .toggle-slider::before {
+  content: '';
+  position: absolute;
   top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.batch-toggle input:checked + .toggle-slider::before {
+  transform: translateX(18px);
 }
 
 .batch-actions {
